@@ -1,0 +1,52 @@
+# Avig.Analyzers — mall att kopiera in i din egen .editorconfig.
+#
+# Paketet slår inte på något åt dig. Elva av tolv regler ligger på "suggestion" som
+# standard och AVIG0006 är helt avstängd, så en nyinstallation kan inte bryta ditt
+# bygge. Vad som ska vara en varning eller ett fel är ditt beslut.
+#
+# Förslag på införande: börja med allt som "suggestion", höj till "warning" när koden
+# är ren, och till "error" först när du vill att den ska förbli det.
+#
+# Har du TreatWarningsAsErrors påslaget: allt du höjer till warning bryter bygget
+# direkt. Höj en regel i taget.
+
+[*.cs]
+
+# --- Formatering. Alla har code fix, går att rätta med dotnet format. ---
+dotnet_diagnostic.AVIG0001.severity = suggestion   # blankrad efter avslutande klammer
+dotnet_diagnostic.AVIG0003.severity = suggestion   # blankrad före return
+dotnet_diagnostic.AVIG0004.severity = suggestion   # blankrad före try
+dotnet_diagnostic.AVIG0005.severity = suggestion   # blankrad före while
+
+# AVIG0006: CRLF. Avstängd som standard — i ett LF-repo skulle varenda fil larma.
+# Kolla .gitattributes innan du slår på den. Har code fix.
+# dotnet_diagnostic.AVIG0006.severity = error
+
+# --- Namngivning ---
+dotnet_diagnostic.AVIG0002.severity = suggestion   # enteckensnamn
+
+# --- Dokumentation ---
+dotnet_diagnostic.AVIG0009.severity = suggestion   # publik controller / I*Repository utan XML-doc
+dotnet_diagnostic.AVIG0011.severity = warning      # <param>/<returns> utan <summary>
+
+# AVIG0009 känner igen controllers (ärver Controller/ControllerBase) och interface som
+# heter I*Repository. Har du egna markörinterface som också ska dokumenteras:
+#   dotnet_code_quality.AVIG0009.additional_documented_interfaces = IAppCommand,IAppQuery
+
+# --- Felhantering och signaturer ---
+dotnet_diagnostic.AVIG0007.severity = suggestion   # metod returnerar null vid fel
+dotnet_diagnostic.AVIG0008.severity = suggestion   # repository-metod utan CancellationToken
+
+# --- Säkerhet ---
+# Roll-, scope- och claimnamn som strängliteral. Enda regeln som är warning direkt ur
+# lådan. Värd att ha på tidigt: en felstavad rollsträng ger tyst nekad eller tyst
+# beviljad åtkomst, aldrig ett kompileringsfel.
+dotnet_diagnostic.AVIG0010.severity = warning
+
+# AVIG0012: controller-action utan [Authorize]/[AllowAnonymous]. Läs beskrivningen innan
+# du åtgärdar: har din host ett globalt AuthorizeFilter är en oannoterad action STÄNGD,
+# och [AllowAnonymous] skulle öppna den. Saknas filtret är den öppen.
+# Egna auth-attribut som implementerar IAuthorizationFilter räknas automatiskt; övriga
+# kan listas med:
+#   dotnet_code_quality.AVIG0012.additional_auth_attributes = HmacAuthenticated,InternalOnly
+dotnet_diagnostic.AVIG0012.severity = suggestion

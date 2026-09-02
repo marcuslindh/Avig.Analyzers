@@ -1,0 +1,22 @@
+# Byggutdata
+[Bb]in/
+[Oo]bj/
+artifacts/
+TestResults/
+
+# IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+# Paket
+*.nupkg
+*.snupkg
+
+# Ovrigt
+*.log
+Thumbs.db
+[Dd]esktop.ini

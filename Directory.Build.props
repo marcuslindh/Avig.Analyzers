@@ -1,0 +1,24 @@
+<Project>
+
+  <!--
+    Delad metadata for bada projekten. Medvetet liten: har ligger INTE nagra
+    tredjepartsanalysatorer och framfor allt ingen ProjectReference med
+    OutputItemType="Analyzer" — det skulle fa analysatorn att analysera sig sjalv.
+  -->
+  <PropertyGroup>
+    <Authors>Marcus Lindh</Authors>
+    <Company>Marcus Lindh</Company>
+    <Copyright>Copyright (c) 2026 Marcus Lindh</Copyright>
+    <NeutralLanguage>en</NeutralLanguage>
+    <RepositoryUrl>https://github.com/marcuslindh/Avig.Analyzers</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageProjectUrl>https://github.com/marcuslindh/Avig.Analyzers</PackageProjectUrl>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,101 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--
+      TargetFramework MASTE vara netstandard2.0.
+
+      Analysatorn laddas in i kompilatorprocessen (csc / VBCSCompiler), inte i
+      konsumentens app, och den processen kor pa .NET Framework nar Visual Studio ar
+      varden. NuGet lagger dessutom analysator-DLL:en pa analyzers/dotnet/cs — en
+      sokvag helt utan TFM-dimension, sa det finns ingen mekanism att skicka olika
+      DLL:er till olika konsumenter.
+
+      En net10.0-byggd analysator laddas darfor tyst inte alls. Konsumentens projekt
+      far garna vara net10.0; det har ingenting med den har raden att gora.
+    -->
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      Deterministisk build med inbaddade symboler + SourceLink (inbyggt i SDK 8+).
+      Inget .snupkg: IncludeBuildOutput=false gor att SDK:ns symbolpaketering aldrig
+      kor, sa ett symbolpaket skulle bli tomt. DebugType=embedded lagger i stallet
+      PDB:n inuti DLL:en, som targetet nedan redan packar.
+    -->
+    <DebugType>embedded</DebugType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackageId>Avig.Analyzers</PackageId>
+    <Version>1.0.0</Version>
+    <Title>Avig.Analyzers</Title>
+    <Description>Projektoberoende Roslyn-regler for C#: formatering, namngivning, dokumentationskrav och auth-hygien. AVIG0001-AVIG0012, fem med code fix. Reglerna larmar som forslag tills du sjalv hojer severity i .editorconfig.</Description>
+    <PackageTags>analyzers;roslyn;codequality;code-analysis;formatting;documentation;security;csharp</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>1.0.0 - forsta slappet. Tolv regler urkopplade ur Medusa.Analyzers och avmedusiserade.</PackageReleaseNotes>
+
+    <!--
+      IncludeBuildOutput=false ar det som avgor om paketet fungerar: en analysator far
+      INTE hamna i lib/, for da refererar konsumenten Roslyn-assemblyn som vanlig kod
+      i stallet for att kora den vid kompilering. Paketet installeras utan att klaga
+      och gor sedan ingenting. DLL:en laggs i stallet i analyzers/dotnet/cs/ via
+      PackAnalyzerAssembly-targetet nedan, och publish.ps1 kontrollerar att den
+      hamnade dar.
+
+      DevelopmentDependency=true hindrar att beroendet flodar vidare till dem som i sin
+      tur refererar konsumentens paket. Reglerna ar en byggtidsangelagenhet, inte
+      nagot som ska folja med ut i en app.
+    -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Stannar pa 4.11.0 med flit. En analysator maste referera en Roslyn-version som ar
+      lika med eller aldre an den konsumentens kompilator hostar. 4.11.0 nar ner till
+      SDK 8.0.4xx / VS 17.11; en bumpning skulle lasa ute alla som inte kor senaste SDK,
+      utan att ge oss ett enda API vi behover.
+
+      Workspaces (inte bara ...CSharp) kravs for code fix providers och drar in
+      Microsoft.CodeAnalysis.CSharp.
+    -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- En README, tva jobb: GitHub renderar den i roten, NuGet i paketet. -->
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <!--
+      avig-analyzers.editorconfig foljer med i paketet men appliceras inte automatiskt:
+      severity ar konsumentens beslut, och ett paket som tyst gor formateringsregler
+      till fel i nagon annans repo vore overtramp. Filen ar en mall att kopiera in i
+      den egna .editorconfig.
+    -->
+    <None Include="avig-analyzers.editorconfig" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <Target Name="PackAnalyzerAssembly" BeforeTargets="_GetPackageFiles">
+    <ItemGroup>
+      <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+  </Target>
+
+</Project>
