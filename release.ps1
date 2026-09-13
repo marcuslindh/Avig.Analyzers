@@ -201,7 +201,9 @@ Write-Host "[4/6] Verifying the package..." -ForegroundColor Yellow
 if ($DryRun) {
     Write-Host "      skipped in a dry run" -ForegroundColor Yellow
 } else {
-    & $publish -NoBump | ForEach-Object { "        $_" }
+    # No pipeline wrapper: publish.ps1 reports through Write-Host, so its output goes straight
+    # to the host and nothing would arrive here to indent.
+    & $publish -NoBump
     if ($LASTEXITCODE -ne 0) {
         Write-Host "      publish.ps1 failed - restoring the working tree, no tag created." -ForegroundColor Red
         git -C $root checkout -- $project $shipped $unshipped
