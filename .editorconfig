@@ -18,16 +18,41 @@ indent_size = 2
 csharp_style_namespace_declarations = file_scoped:warning
 dotnet_style_namespace_match_folder = false
 
-# Projektkonvention arvd fran kallan: explicita bool-jamforelser (x == true / x == false).
-# Reglerna nedan vill skriva om dem och far vara tysta.
+# Project convention inherited from the source: explicit bool comparisons
+# (x == true / x == false). The rules below want to rewrite them, so they stay quiet.
 dotnet_diagnostic.RCS1033.severity = none
 dotnet_diagnostic.S1125.severity = none
 dotnet_diagnostic.IDE0075.severity = none
 
-# GenerateDocumentationFile ar av i analyzerprojektet — CS1591 ska inte klaga.
+# GenerateDocumentationFile is off in the analyzer project, so CS1591 must not complain.
 dotnet_diagnostic.CS1591.severity = none
 
+# --- Avig.Analyzers, applied to itself. Every rule at error; see README "Recommended setup". ---
+dotnet_diagnostic.AVIG0001.severity = error
+dotnet_diagnostic.AVIG0002.severity = error
+dotnet_diagnostic.AVIG0003.severity = error
+dotnet_diagnostic.AVIG0004.severity = error
+dotnet_diagnostic.AVIG0005.severity = error
+dotnet_diagnostic.AVIG0006.severity = error
+# AVIG0007 is off here, following the README's own "turn down the rule, not the set".
+# All twelve hits in this repository are private syntax-tree helpers whose null means "not
+# applicable" (GetInvokedName, FindTokenInScope, GetReadOnlyEquivalent), not "an error
+# occurred". The rule is about failure signalling in a contract a caller depends on; none
+# of these are public API. Twelve #pragma suppressions would be worse than one line here.
+dotnet_diagnostic.AVIG0007.severity = none
+dotnet_diagnostic.AVIG0008.severity = error
+dotnet_diagnostic.AVIG0009.severity = error
+dotnet_diagnostic.AVIG0010.severity = error
+dotnet_diagnostic.AVIG0011.severity = error
+dotnet_diagnostic.AVIG0012.severity = error
+dotnet_diagnostic.AVIG0014.severity = error
+dotnet_diagnostic.AVIG0015.severity = error
+dotnet_diagnostic.AVIG0020.severity = error
+dotnet_diagnostic.AVIG0021.severity = error
+dotnet_diagnostic.AVIG0022.severity = error
+dotnet_diagnostic.AVIG0023.severity = error
+
 [tests/**/*.cs]
-# Testkod innehaller avsiktligt felformaterad kod som stranglitteraler.
+# Test code deliberately contains badly formatted code as string literals.
 dotnet_diagnostic.IDE0055.severity = none
 dotnet_diagnostic.CA1707.severity = none

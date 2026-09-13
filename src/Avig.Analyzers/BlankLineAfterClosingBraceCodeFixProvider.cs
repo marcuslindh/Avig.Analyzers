@@ -30,6 +30,7 @@ public sealed class BlankLineAfterClosingBraceCodeFixProvider : CodeFixProvider
                 createChangedDocument: cancellationToken => InsertBlankLineAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: "InsertBlankLineAfterClosingBrace"),
             diagnostic);
+
         return Task.CompletedTask;
     }
 
@@ -54,6 +55,7 @@ public sealed class BlankLineAfterClosingBraceCodeFixProvider : CodeFixProvider
         SyntaxToken newNextToken = nextToken.WithLeadingTrivia(newLeading);
 
         SyntaxNode newRoot = root.ReplaceToken(nextToken, newNextToken);
+
         return document.WithSyntaxRoot(newRoot);
     }
 

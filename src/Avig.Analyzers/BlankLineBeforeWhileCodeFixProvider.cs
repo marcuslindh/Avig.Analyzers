@@ -30,6 +30,7 @@ public sealed class BlankLineBeforeWhileCodeFixProvider : CodeFixProvider
                 createChangedDocument: cancellationToken => InsertBlankLineAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: "InsertBlankLineBeforeWhile"),
             diagnostic);
+
         return Task.CompletedTask;
     }
 
@@ -47,6 +48,7 @@ public sealed class BlankLineBeforeWhileCodeFixProvider : CodeFixProvider
         SyntaxToken newToken = whileKeyword.WithLeadingTrivia(newLeading);
 
         SyntaxNode newRoot = root.ReplaceToken(whileKeyword, newToken);
+
         return document.WithSyntaxRoot(newRoot);
     }
 

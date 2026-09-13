@@ -73,12 +73,14 @@ public sealed class BlankLineAfterClosingBraceAnalyzer : DiagnosticAnalyzer
         {
             return null;
         }
+
         if (IsExcludedByTryCatchFinally(closeBraceToken) == true)
         {
             return null;
         }
 
         SyntaxNode? current = closeBraceToken.Parent;
+
         while (current != null)
         {
             SyntaxToken lastReal = current.GetLastToken();
@@ -166,6 +168,7 @@ public sealed class BlankLineAfterClosingBraceAnalyzer : DiagnosticAnalyzer
         {
             return null;
         }
+
         return list[index + 1];
     }
 
@@ -183,12 +186,14 @@ public sealed class BlankLineAfterClosingBraceAnalyzer : DiagnosticAnalyzer
     internal static bool HasBlankLineBefore(SyntaxNode node)
     {
         SyntaxTriviaList leadingTrivia = node.GetFirstToken(includeZeroWidth: true).LeadingTrivia;
-        int i = 0;
-        while (i < leadingTrivia.Count
-            && (leadingTrivia[i].IsKind(SyntaxKind.WhitespaceTrivia) == true || leadingTrivia[i].IsDirective == true))
+        int index = 0;
+
+        while (index < leadingTrivia.Count
+            && (leadingTrivia[index].IsKind(SyntaxKind.WhitespaceTrivia) == true || leadingTrivia[index].IsDirective == true))
         {
-            i++;
+            index++;
         }
-        return i < leadingTrivia.Count && leadingTrivia[i].IsKind(SyntaxKind.EndOfLineTrivia) == true;
+
+        return index < leadingTrivia.Count && leadingTrivia[index].IsKind(SyntaxKind.EndOfLineTrivia) == true;
     }
 }

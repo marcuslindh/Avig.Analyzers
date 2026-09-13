@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Testerna innehaller avsiktligt felformaterad kod som stranglitteraler. -->
+    <!-- The tests deliberately contain badly formatted code as string literals. -->
     <NoWarn>$(NoWarn);CA1707;IDE0055;CA1000</NoWarn>
   </PropertyGroup>
 
@@ -20,27 +20,37 @@
     </PackageReference>
 
     <!--
-      De ...Testing.XUnit-paketen ar markta obsolete; DefaultVerifier i baspaketen ar
-      ersattaren och fungerar med vilket testramverk som helst.
+      The ...Testing.XUnit packages are marked obsolete; DefaultVerifier in the base
+      packages is the replacement and works with any test framework.
     -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Analyzer.Testing" Version="1.1.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.2" />
     <!--
-      Maste pinnas. Testramverket refererar Workspaces >= 1.0.1 och skulle utan den har
-      raden kunna losas till nagot langt aldre an det analysatorn byggs mot, med
-      forvirrande laddningsfel som foljd.
+      Must be pinned. The test framework references Workspaces >= 1.0.1 and without this
+      line could resolve to something far older than what the analyzer is built against,
+      with confusing load failures as the result.
     -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!--
-      VANLIG ProjectReference, INTE OutputItemType="Analyzer".
-      Testerna instansierar analysatorklasserna (typeof(BlankLineBeforeReturnAnalyzer)) och
-      maste darfor ha assemblyn som en riktig referens. Med OutputItemType="Analyzer"
-      skickas den bara till kompilatorn och typerna gar inte att na fran testkoden.
+      Both an analyzer and a real reference, which is why both attributes are here.
+      OutputItemType="Analyzer" is what makes the rules run on this project's own code -
+      the package eats its own dog food, and a rule that is unbearable to live with shows
+      up here first. ReferenceOutputAssembly="true" keeps the assembly as an ordinary
+      reference as well, because the tests instantiate the analyzer classes
+      (typeof(BlankLineBeforeReturnAnalyzer)); with the analyzer attribute alone the
+      assembly is only handed to the compiler and the types cannot be reached from test
+      code.
+
+      The analyzer project itself cannot do this: csc would load the very DLL the build is
+      about to overwrite. Its source is checked by the same rules through the .editorconfig
+      when it is compiled here as a project reference.
     -->
-    <ProjectReference Include="..\..\src\Avig.Analyzers\Avig.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Avig.Analyzers\Avig.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="true" />
   </ItemGroup>
 
 </Project>

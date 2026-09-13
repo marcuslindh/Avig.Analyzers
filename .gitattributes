@@ -1,5 +1,5 @@
-# Repot levererar AVIG0006, som kraver CRLF, och har radslutskansliga testfixturer.
-# Radslut far darfor inte overlatas at den enskilda maskinens core.autocrlf.
+# This repository ships AVIG0006, which requires CRLF, and has line-ending sensitive test
+# fixtures. Line endings must therefore not be left to an individual machine's core.autocrlf.
 * text=auto eol=crlf
 
 *.sh text eol=lf

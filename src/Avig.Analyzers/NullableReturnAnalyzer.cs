@@ -110,6 +110,7 @@ public sealed class NullableReturnAnalyzer : DiagnosticAnalyzer
                 {
                     CollectReturnValueLeaves(arm.Expression, leaves);
                 }
+
                 break;
             default:
                 leaves.Add(expression);

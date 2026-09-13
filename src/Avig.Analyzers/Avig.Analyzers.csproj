@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <!--
-      TargetFramework MASTE vara netstandard2.0.
+      TargetFramework MUST be netstandard2.0.
 
-      Analysatorn laddas in i kompilatorprocessen (csc / VBCSCompiler), inte i
-      konsumentens app, och den processen kor pa .NET Framework nar Visual Studio ar
-      varden. NuGet lagger dessutom analysator-DLL:en pa analyzers/dotnet/cs — en
-      sokvag helt utan TFM-dimension, sa det finns ingen mekanism att skicka olika
-      DLL:er till olika konsumenter.
+      The analyzer is loaded into the compiler process (csc / VBCSCompiler), not into the
+      consumer's app, and that process runs on .NET Framework when Visual Studio is the
+      host. NuGet also places the analyzer DLL at analyzers/dotnet/cs — a path with no TFM
+      dimension at all, so there is no mechanism for shipping different DLLs to different
+      consumers.
 
-      En net10.0-byggd analysator laddas darfor tyst inte alls. Konsumentens projekt
-      far garna vara net10.0; det har ingenting med den har raden att gora.
+      A net10.0 analyzer is therefore silently never loaded. The consumer's project is
+      welcome to be net10.0; that has nothing to do with this line.
     -->
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -24,10 +24,10 @@
 
   <PropertyGroup>
     <!--
-      Deterministisk build med inbaddade symboler + SourceLink (inbyggt i SDK 8+).
-      Inget .snupkg: IncludeBuildOutput=false gor att SDK:ns symbolpaketering aldrig
-      kor, sa ett symbolpaket skulle bli tomt. DebugType=embedded lagger i stallet
-      PDB:n inuti DLL:en, som targetet nedan redan packar.
+      Deterministic build with embedded symbols + SourceLink (built into SDK 8+).
+      No .snupkg: IncludeBuildOutput=false means the SDK's symbol packaging never runs, so
+      a symbol package would come out empty. DebugType=embedded instead puts the PDB inside
+      the DLL, which the target below already packs.
     -->
     <DebugType>embedded</DebugType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -37,25 +37,25 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Avig.Analyzers</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Title>Avig.Analyzers</Title>
-    <Description>Projektoberoende Roslyn-regler for C#: formatering, namngivning, dokumentationskrav och auth-hygien. AVIG0001-AVIG0012, fem med code fix. Reglerna larmar som forslag tills du sjalv hojer severity i .editorconfig.</Description>
+    <Description>Project-independent Roslyn rules for C#: formatting, naming, documentation requirements, async hygiene and auth hygiene. AVIG0001-AVIG0023, seven with a code fix. The rules report as suggestions until you raise the severity yourself in .editorconfig; four of the eighteen are warnings out of the box.</Description>
     <PackageTags>analyzers;roslyn;codequality;code-analysis;formatting;documentation;security;csharp</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>1.0.0 - forsta slappet. Tolv regler urkopplade ur Medusa.Analyzers och avmedusiserade.</PackageReleaseNotes>
+    <PackageReleaseNotes>New rules since 1.0.0: AVIG0014 (blocking call on a task), AVIG0015 (awaited call drops a CancellationToken), AVIG0020 (local time instead of UTC), AVIG0021 (log message built instead of templated), AVIG0022 (public member hands out a mutable collection), AVIG0023 (TODO comment without a tracking reference). 1.0.0 - first release, twelve rules extracted from Medusa.Analyzers and de-Medusa-fied.</PackageReleaseNotes>
 
     <!--
-      IncludeBuildOutput=false ar det som avgor om paketet fungerar: en analysator far
-      INTE hamna i lib/, for da refererar konsumenten Roslyn-assemblyn som vanlig kod
-      i stallet for att kora den vid kompilering. Paketet installeras utan att klaga
-      och gor sedan ingenting. DLL:en laggs i stallet i analyzers/dotnet/cs/ via
-      PackAnalyzerAssembly-targetet nedan, och publish.ps1 kontrollerar att den
-      hamnade dar.
+      IncludeBuildOutput=false is what decides whether the package works at all: an
+      analyzer must NOT end up in lib/, because then the consumer references the Roslyn
+      assembly as ordinary code instead of running it at compile time. The package
+      installs without complaint and then does nothing. The DLL goes into
+      analyzers/dotnet/cs/ through the PackAnalyzerAssembly target below instead, and
+      publish.ps1 verifies that it landed there.
 
-      DevelopmentDependency=true hindrar att beroendet flodar vidare till dem som i sin
-      tur refererar konsumentens paket. Reglerna ar en byggtidsangelagenhet, inte
-      nagot som ska folja med ut i en app.
+      DevelopmentDependency=true stops the dependency from flowing on to whoever
+      references the consumer's package in turn. The rules are a build-time concern, not
+      something that should travel out into an app.
     -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -64,12 +64,12 @@
 
   <ItemGroup>
     <!--
-      Stannar pa 4.11.0 med flit. En analysator maste referera en Roslyn-version som ar
-      lika med eller aldre an den konsumentens kompilator hostar. 4.11.0 nar ner till
-      SDK 8.0.4xx / VS 17.11; en bumpning skulle lasa ute alla som inte kor senaste SDK,
-      utan att ge oss ett enda API vi behover.
+      Deliberately pinned to 4.11.0. An analyzer must reference a Roslyn version equal to
+      or older than the one the consumer's compiler hosts. 4.11.0 reaches down to
+      SDK 8.0.4xx / VS 17.11; bumping it would lock out everyone not on the latest SDK
+      without giving us a single API we need.
 
-      Workspaces (inte bara ...CSharp) kravs for code fix providers och drar in
+      Workspaces (not just ...CSharp) is required for code fix providers and pulls in
       Microsoft.CodeAnalysis.CSharp.
     -->
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" PrivateAssets="all" />
@@ -81,13 +81,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- En README, tva jobb: GitHub renderar den i roten, NuGet i paketet. -->
+    <!-- One README, two jobs: GitHub renders it in the root, NuGet inside the package. -->
     <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
     <!--
-      avig-analyzers.editorconfig foljer med i paketet men appliceras inte automatiskt:
-      severity ar konsumentens beslut, och ett paket som tyst gor formateringsregler
-      till fel i nagon annans repo vore overtramp. Filen ar en mall att kopiera in i
-      den egna .editorconfig.
+      avig-analyzers.editorconfig ships inside the package but is not applied
+      automatically: severity is the consumer's decision, and a package that quietly turns
+      formatting rules into errors in somebody else's repository would be overstepping.
+      The file is a template to copy into your own .editorconfig.
     -->
     <None Include="avig-analyzers.editorconfig" Pack="true" PackagePath="\" />
   </ItemGroup>

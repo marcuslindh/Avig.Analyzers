@@ -30,6 +30,7 @@ public sealed class BlankLineBeforeTryCodeFixProvider : CodeFixProvider
                 createChangedDocument: cancellationToken => InsertBlankLineAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: "InsertBlankLineBeforeTry"),
             diagnostic);
+
         return Task.CompletedTask;
     }
 
@@ -47,6 +48,7 @@ public sealed class BlankLineBeforeTryCodeFixProvider : CodeFixProvider
         SyntaxToken newToken = tryKeyword.WithLeadingTrivia(newLeading);
 
         SyntaxNode newRoot = root.ReplaceToken(tryKeyword, newToken);
+
         return document.WithSyntaxRoot(newRoot);
     }
 

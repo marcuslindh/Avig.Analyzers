@@ -1,4 +1,4 @@
-# Byggutdata
+# Build output
 [Bb]in/
 [Oo]bj/
 artifacts/
@@ -12,11 +12,14 @@ TestResults/
 *.userprefs
 *.DotSettings.user
 
-# Paket
+# Packages
 *.nupkg
 *.snupkg
 
-# Ovrigt
+# Other
 *.log
 Thumbs.db
 [Dd]esktop.ini
+
+# Local AI code review state, not project content
+.aicodereview/

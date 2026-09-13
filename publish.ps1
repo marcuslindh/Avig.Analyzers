@@ -1,24 +1,24 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-    Bygger, testar, packar och formkontrollerar Avig.Analyzers.
+    Builds, tests, packs and shape-checks Avig.Analyzers.
 
 .DESCRIPTION
-    Skriptet pushar aldrig sjalv. Publicering till nuget.org ar ett manuellt steg, och
-    API-nyckeln ska varken hamna i repot eller i skriptets shell-historik. Det som skrivs
-    ut pa slutet ar kommandot du kor for hand.
+    The script never pushes on its own. Publishing to nuget.org is a manual step, and the
+    API key must end up neither in the repository nor in the script's shell history. What is
+    printed at the end is the command you run by hand.
 
 .PARAMETER NoBump
-    Behall nuvarande version i stallet for att oka patch-siffran.
+    Keep the current version instead of incrementing the patch number.
 
 .PARAMETER SkipTests
-    Hoppa over testkorningen. Anvands nar du redan kort dem.
+    Skip the test run. Use when you have already run them.
 
 .PARAMETER SkipVerify
-    Hoppa over formkontrollen av nupkg:en. Gor det inte utan sarskild anledning.
+    Skip the shape check of the nupkg. Do not do this without a specific reason.
 
 .PARAMETER Feed
-    Mapp att kopiera det byggda paketet till for lokal roktestning.
+    Folder to copy the built package into for local smoke testing.
 #>
 param(
     [switch]$NoBump,
@@ -46,22 +46,28 @@ function Get-CurrentVersion {
 }
 
 function Set-Version([string]$NewVersion) {
-    [xml]$csproj = Get-Content $project
-    foreach ($group in $csproj.Project.PropertyGroup) {
-        if ($group.Version) { $group.Version = $NewVersion }
+    # A text replace, deliberately, not [xml].Save(). XmlDocument rewrites the entire file
+    # on save: it drops the blank lines between PropertyGroups and normalises the line
+    # endings, which turns a one-element version bump into a 70-line diff. The version is a
+    # single element and editing it must not reformat everything around it.
+    $content = Get-Content $project -Raw
+    $updated = ([regex]'<Version>[^<]*</Version>').Replace($content, "<Version>$NewVersion</Version>", 1)
+    if ($updated -eq $content) {
+        Write-Host "      Could not rewrite <Version> in the csproj." -ForegroundColor Red
+        exit 1
     }
 
-    $csproj.Save((Resolve-Path $project))
+    [System.IO.File]::WriteAllText((Resolve-Path $project), $updated, [System.Text.UTF8Encoding]::new($false))
 }
 
-# --- [1/5] Tester ---
+# --- [1/5] Tests ---
 if ($SkipTests) {
-    Write-Host "[1/5] Tester: HOPPAS OVER (-SkipTests)" -ForegroundColor Yellow
+    Write-Host "[1/5] Tests: SKIPPED (-SkipTests)" -ForegroundColor Yellow
 } else {
-    Write-Host "[1/5] Kor tester..." -ForegroundColor Yellow
+    Write-Host "[1/5] Running tests..." -ForegroundColor Yellow
     dotnet test $tests -c Release --nologo -v quiet
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "      Tester misslyckades - packar inte." -ForegroundColor Red
+        Write-Host "      Tests failed - not packing." -ForegroundColor Red
         exit 1
     }
 
@@ -72,13 +78,13 @@ if ($SkipTests) {
 Write-Host "[2/5] Version" -ForegroundColor Yellow
 $current = Get-CurrentVersion
 if (-not $current) {
-    Write-Host "      Hittade ingen <Version> i csproj." -ForegroundColor Red
+    Write-Host "      Found no <Version> in the csproj." -ForegroundColor Red
     exit 1
 }
 
 if ($NoBump) {
     $version = $current
-    Write-Host "      $version (ingen bump)" -ForegroundColor Yellow
+    Write-Host "      $version (no bump)" -ForegroundColor Yellow
 } else {
     $parts = $current.Split('.')
     $version = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
@@ -87,33 +93,33 @@ if ($NoBump) {
 }
 
 # --- [3/5] Pack ---
-# ContinuousIntegrationBuild gor sokvagarna deterministiska, vilket ar det SourceLink
-# behover for att peka ratt fran de inbaddade symbolerna.
-Write-Host "[3/5] Packar..." -ForegroundColor Yellow
+# ContinuousIntegrationBuild makes the paths deterministic, which is what SourceLink needs
+# in order to point correctly from the embedded symbols.
+Write-Host "[3/5] Packing..." -ForegroundColor Yellow
 dotnet pack $project -c Release --nologo -v quiet -p:ContinuousIntegrationBuild=true
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "      Pack misslyckades." -ForegroundColor Red
+    Write-Host "      Pack failed." -ForegroundColor Red
     exit 1
 }
 
 $binRelease = Join-Path $root "src\Avig.Analyzers\bin\Release"
 $package = Get-ChildItem -Path $binRelease -Filter "Avig.Analyzers.$version.nupkg" | Select-Object -First 1
 if (-not $package) {
-    Write-Host "      Hittade inget paket for version $version." -ForegroundColor Red
+    Write-Host "      Found no package for version $version." -ForegroundColor Red
     exit 1
 }
 
 Write-Host "      $($package.Name)" -ForegroundColor Green
 
-# --- [4/5] Formkontroll ---
-# Ett analysatorpaket som packats fel installeras utan att klaga och gor sedan ingenting:
-# DLL:en hamnar i lib/ och refereras som vanlig kod i stallet for att koras av
-# kompilatorn. Det syns inte pa installationen, bara pa innehallet - darfor den har
-# kontrollen. Ta inte bort den.
+# --- [4/5] Shape check ---
+# An analyzer package that was packed wrong installs without complaint and then does
+# nothing: the DLL ends up in lib/ and is referenced as ordinary code instead of being run
+# by the compiler. That is invisible at install time and only visible in the contents -
+# hence this check. Do not remove it.
 if ($SkipVerify) {
-    Write-Host "[4/5] Formkontroll: HOPPAS OVER (-SkipVerify)" -ForegroundColor Yellow
+    Write-Host "[4/5] Shape check: SKIPPED (-SkipVerify)" -ForegroundColor Yellow
 } else {
-    Write-Host "[4/5] Kontrollerar paketets innehall..." -ForegroundColor Yellow
+    Write-Host "[4/5] Checking the package contents..." -ForegroundColor Yellow
 
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $zip = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
@@ -129,64 +135,64 @@ if ($SkipVerify) {
     $template    = $entries | Where-Object { $_ -eq "avig-analyzers.editorconfig" }
 
     if (-not $analyzerDll) {
-        Write-Host "      FEL: analyzers/dotnet/cs/Avig.Analyzers.dll saknas." -ForegroundColor Red
-        Write-Host "      Paketet skulle installeras utan att en enda regel kordes." -ForegroundColor Red
+        Write-Host "      ERROR: analyzers/dotnet/cs/Avig.Analyzers.dll is missing." -ForegroundColor Red
+        Write-Host "      The package would install without a single rule ever running." -ForegroundColor Red
         exit 1
     }
 
     if ($libEntries) {
-        Write-Host "      FEL: paketet innehaller lib/ - analysatorn skulle refereras som kod:" -ForegroundColor Red
+        Write-Host "      ERROR: the package contains lib/ - the analyzer would be referenced as code:" -ForegroundColor Red
         $libEntries | ForEach-Object { Write-Host "        $_" -ForegroundColor Red }
         exit 1
     }
 
     if (-not $readme) {
-        Write-Host "      FEL: README.md saknas i paketroten." -ForegroundColor Red
+        Write-Host "      ERROR: README.md is missing from the package root." -ForegroundColor Red
         exit 1
     }
 
     if (-not $template) {
-        Write-Host "      FEL: avig-analyzers.editorconfig saknas i paketroten." -ForegroundColor Red
+        Write-Host "      ERROR: avig-analyzers.editorconfig is missing from the package root." -ForegroundColor Red
         exit 1
     }
 
-    Write-Host "      analyzers/dotnet/cs/Avig.Analyzers.dll finns, inget lib/" -ForegroundColor Green
-    Write-Host "      README.md + avig-analyzers.editorconfig finns i roten" -ForegroundColor Green
+    Write-Host "      analyzers/dotnet/cs/Avig.Analyzers.dll present, no lib/" -ForegroundColor Green
+    Write-Host "      README.md + avig-analyzers.editorconfig present in the root" -ForegroundColor Green
 }
 
-# --- [5/5] Lokalt flode ---
-Write-Host "[5/5] Kopierar till lokalt flode..." -ForegroundColor Yellow
+# --- [5/5] Local feed ---
+Write-Host "[5/5] Copying to the local feed..." -ForegroundColor Yellow
 if (Test-Path $Feed) {
     Copy-Item $package.FullName -Destination $Feed -Force
     Write-Host "      $Feed\$($package.Name)" -ForegroundColor Green
 } else {
-    Write-Host "      $Feed finns inte - paketet ligger kvar i bin\Release" -ForegroundColor Yellow
+    Write-Host "      $Feed does not exist - the package stays in bin\Release" -ForegroundColor Yellow
 }
 
-# --- Paminnelser ---
+# --- Reminders ---
 $unshippedHasRules = (Get-Content $unshipped | Where-Object { $_ -match '^\s*AVIG\d{4}\s*\|' }).Count -gt 0
 if ($unshippedHasRules) {
     Write-Host ""
-    Write-Host "PAMINNELSE: AnalyzerReleases.Unshipped.md innehaller regler." -ForegroundColor Yellow
-    Write-Host "Flytta dem till Shipped under '## Release $version' innan du publicerar," -ForegroundColor Yellow
-    Write-Host "annars sager paketet att reglerna aldrig slappts." -ForegroundColor Yellow
+    Write-Host "REMINDER: AnalyzerReleases.Unshipped.md contains rules." -ForegroundColor Yellow
+    Write-Host "Move them to Shipped under '## Release $version' before publishing," -ForegroundColor Yellow
+    Write-Host "otherwise the package claims the rules were never released." -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "=== Avig.Analyzers v$version klart ===" -ForegroundColor Cyan
+Write-Host "=== Avig.Analyzers v$version done ===" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Publicera manuellt (API-nyckeln far inte checkas in):" -ForegroundColor Cyan
+Write-Host "Publish manually (the API key must not be checked in):" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "    `$env:NUGET_API_KEY = '<din nyckel fran nuget.org>'" -ForegroundColor Gray
+Write-Host "    `$env:NUGET_API_KEY = '<your key from nuget.org>'" -ForegroundColor Gray
 Write-Host "    dotnet nuget push `"$($package.FullName)`" ``" -ForegroundColor Gray
 Write-Host "        --api-key `$env:NUGET_API_KEY ``" -ForegroundColor Gray
 Write-Host "        --source https://api.nuget.org/v3/index.json" -ForegroundColor Gray
 Write-Host ""
-Write-Host "Skriptet pushar inte sjalv. Det ar med flit." -ForegroundColor Cyan
+Write-Host "The script does not push on its own. That is deliberate." -ForegroundColor Cyan
 
 if (-not $NoBump) {
     Write-Host ""
-    Write-Host "Glom inte:" -ForegroundColor Cyan
+    Write-Host "Do not forget:" -ForegroundColor Cyan
     Write-Host "    git add -A; git commit -m `"Release v$version`"; git tag v$version; git push --follow-tags" -ForegroundColor Gray
 }
 

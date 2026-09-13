@@ -75,6 +75,7 @@ public sealed class SingleCharacterIdentifierAnalyzer : DiagnosticAnalyzer
         {
             return;
         }
+
         context.ReportDiagnostic(Diagnostic.Create(Rule, identifier.GetLocation(), name));
     }
 }

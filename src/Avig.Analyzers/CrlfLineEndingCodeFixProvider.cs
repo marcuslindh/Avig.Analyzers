@@ -29,6 +29,7 @@ public sealed class CrlfLineEndingCodeFixProvider : CodeFixProvider
                 createChangedDocument: cancellationToken => ConvertToCrlfAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: "ConvertToCrlf"),
             diagnostic);
+
         return Task.CompletedTask;
     }
 
@@ -41,6 +42,7 @@ public sealed class CrlfLineEndingCodeFixProvider : CodeFixProvider
         }
 
         SourceText newText = text.Replace(diagnosticSpan, "\r\n");
+
         return document.WithText(newText);
     }
 }

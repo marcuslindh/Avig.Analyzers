@@ -1,9 +1,13 @@
 <Project>
 
   <!--
-    Delad metadata for bada projekten. Medvetet liten: har ligger INTE nagra
-    tredjepartsanalysatorer och framfor allt ingen ProjectReference med
-    OutputItemType="Analyzer" — det skulle fa analysatorn att analysera sig sjalv.
+    Shared metadata for both projects. Deliberately small: there are NO third-party
+    analyzers here.
+
+    Avig.Analyzers does run on this repository, but it is wired up in the test project
+    rather than here, because only that project can safely load it: the analyzer project
+    itself would have csc load the very DLL the build is about to overwrite. See the
+    ProjectReference in Avig.Analyzers.Tests.csproj.
   -->
   <PropertyGroup>
     <Authors>Marcus Lindh</Authors>
@@ -19,6 +23,13 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+    <!--
+      What the README recommends to consumers, applied here first. Every AVIG rule is at
+      error in .editorconfig; this covers everything else, so a compiler or CA warning
+      cannot accumulate unnoticed either.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
 </Project>

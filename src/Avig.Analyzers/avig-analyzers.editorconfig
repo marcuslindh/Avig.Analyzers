@@ -1,52 +1,83 @@
-# Avig.Analyzers — mall att kopiera in i din egen .editorconfig.
+# Avig.Analyzers — a template to copy into your own .editorconfig.
 #
-# Paketet slår inte på något åt dig. Elva av tolv regler ligger på "suggestion" som
-# standard och AVIG0006 är helt avstängd, så en nyinstallation kan inte bryta ditt
-# bygge. Vad som ska vara en varning eller ett fel är ditt beslut.
+# The package turns nothing on for you. Thirteen of the eighteen rules default to
+# "suggestion" and AVIG0006 is disabled entirely, so a fresh install cannot break your
+# build. What should be a warning or an error is your decision.
 #
-# Förslag på införande: börja med allt som "suggestion", höj till "warning" när koden
-# är ren, och till "error" först när du vill att den ska förbli det.
+# A suggested rollout: start with everything at "suggestion", raise to "warning" once the
+# code is clean, and to "error" only when you want it to stay that way.
 #
-# Har du TreatWarningsAsErrors påslaget: allt du höjer till warning bryter bygget
-# direkt. Höj en regel i taget.
+# If you have TreatWarningsAsErrors on: anything you raise to warning breaks the build
+# immediately. Raise one rule at a time.
+#
+# This file is the cautious starting point, not the recommendation. The README section
+# "Recommended setup" argues for every rule at error plus TreatWarningsAsErrors, and gives
+# the order to get there on an existing codebase:
+#   https://github.com/marcuslindh/Avig.Analyzers#recommended-setup
 
 [*.cs]
 
-# --- Formatering. Alla har code fix, går att rätta med dotnet format. ---
-dotnet_diagnostic.AVIG0001.severity = suggestion   # blankrad efter avslutande klammer
-dotnet_diagnostic.AVIG0003.severity = suggestion   # blankrad före return
-dotnet_diagnostic.AVIG0004.severity = suggestion   # blankrad före try
-dotnet_diagnostic.AVIG0005.severity = suggestion   # blankrad före while
+# --- Formatting. All have code fixes and can be applied with dotnet format. ---
+dotnet_diagnostic.AVIG0001.severity = suggestion   # blank line after a closing brace
+dotnet_diagnostic.AVIG0003.severity = suggestion   # blank line before return
+dotnet_diagnostic.AVIG0004.severity = suggestion   # blank line before try
+dotnet_diagnostic.AVIG0005.severity = suggestion   # blank line before while
 
-# AVIG0006: CRLF. Avstängd som standard — i ett LF-repo skulle varenda fil larma.
-# Kolla .gitattributes innan du slår på den. Har code fix.
+# AVIG0006: CRLF. Disabled by default — in an LF repository every file would report.
+# Check .gitattributes before turning it on. Has a code fix.
 # dotnet_diagnostic.AVIG0006.severity = error
 
-# --- Namngivning ---
-dotnet_diagnostic.AVIG0002.severity = suggestion   # enteckensnamn
+# --- Naming ---
+dotnet_diagnostic.AVIG0002.severity = suggestion   # single-character identifiers
 
-# --- Dokumentation ---
-dotnet_diagnostic.AVIG0009.severity = suggestion   # publik controller / I*Repository utan XML-doc
-dotnet_diagnostic.AVIG0011.severity = warning      # <param>/<returns> utan <summary>
+# --- Documentation ---
+dotnet_diagnostic.AVIG0009.severity = suggestion   # public controller / I*Repository without XML doc
+dotnet_diagnostic.AVIG0011.severity = warning      # <param>/<returns> without <summary>
 
-# AVIG0009 känner igen controllers (ärver Controller/ControllerBase) och interface som
-# heter I*Repository. Har du egna markörinterface som också ska dokumenteras:
+# AVIG0009 recognises controllers (deriving from Controller/ControllerBase) and interfaces
+# named I*Repository. If you have your own marker interfaces that should be documented:
 #   dotnet_code_quality.AVIG0009.additional_documented_interfaces = IAppCommand,IAppQuery
 
-# --- Felhantering och signaturer ---
-dotnet_diagnostic.AVIG0007.severity = suggestion   # metod returnerar null vid fel
-dotnet_diagnostic.AVIG0008.severity = suggestion   # repository-metod utan CancellationToken
+# --- Error handling and signatures ---
+dotnet_diagnostic.AVIG0007.severity = suggestion   # method returns null to signal failure
+dotnet_diagnostic.AVIG0008.severity = suggestion   # repository method without a CancellationToken
+dotnet_diagnostic.AVIG0022.severity = suggestion   # public member hands out a mutable collection
 
-# --- Säkerhet ---
-# Roll-, scope- och claimnamn som strängliteral. Enda regeln som är warning direkt ur
-# lådan. Värd att ha på tidigt: en felstavad rollsträng ger tyst nekad eller tyst
-# beviljad åtkomst, aldrig ett kompileringsfel.
+# --- Async hygiene. Both are warnings out of the box. ---
+# Same criterion as AVIG0010: they catch something that fails silently in production and
+# never produces a compile error. A blocking call on a task only deadlocks under load, and
+# a dropped token means the work keeps running after the caller gave up.
+dotnet_diagnostic.AVIG0014.severity = warning      # .Result / .Wait() / GetAwaiter().GetResult()
+dotnet_diagnostic.AVIG0015.severity = warning      # awaited call drops an available CancellationToken
+
+# --- Time and logging ---
+dotnet_diagnostic.AVIG0020.severity = suggestion   # DateTime.Now / Today / DateTimeOffset.Now
+dotnet_diagnostic.AVIG0021.severity = suggestion   # log message built instead of templated
+
+# --- Maintainability. Warning out of the box. ---
+# A TODO with no issue id or link is a promise with no owner. At "suggestion" it would never
+# reach the build log, and a marker nobody sees is the thing the rule exists to prevent.
+dotnet_diagnostic.AVIG0023.severity = warning      # TODO without a tracking reference
+
+# Markers are TODO, FIXME, HACK and XXX; a reference is #123, ABC-123 or a URL. Both are
+# configurable:
+#   dotnet_code_quality.AVIG0023.additional_markers = NOTE,REVIEW
+#   dotnet_code_quality.AVIG0023.reference_pattern = (#\d+)|(WORK-\d+)
+
+# AVIG0021 recognises receivers whose type name contains Logger, plus Serilog's static Log.
+# Your own wrappers can be listed:
+#   dotnet_code_quality.AVIG0021.additional_logger_types = Telemetry,AuditTrail
+
+# --- Security ---
+# Role, scope and claim names as string literals. One of the four rules that is a warning
+# out of the box. Worth having on early: a misspelled role string silently denies or
+# silently grants access, never a compile error.
 dotnet_diagnostic.AVIG0010.severity = warning
 
-# AVIG0012: controller-action utan [Authorize]/[AllowAnonymous]. Läs beskrivningen innan
-# du åtgärdar: har din host ett globalt AuthorizeFilter är en oannoterad action STÄNGD,
-# och [AllowAnonymous] skulle öppna den. Saknas filtret är den öppen.
-# Egna auth-attribut som implementerar IAuthorizationFilter räknas automatiskt; övriga
-# kan listas med:
+# AVIG0012: controller action without [Authorize]/[AllowAnonymous]. Read the description
+# before fixing: if your host has a global AuthorizeFilter, an unannotated action is CLOSED
+# and [AllowAnonymous] would open it. Without the filter it is open.
+# Custom auth attributes implementing IAuthorizationFilter are recognised automatically;
+# others can be listed with:
 #   dotnet_code_quality.AVIG0012.additional_auth_attributes = HmacAuthenticated,InternalOnly
 dotnet_diagnostic.AVIG0012.severity = suggestion

@@ -110,6 +110,7 @@ public sealed class ExplicitAuthorizationDecisionAnalyzer : DiagnosticAnalyzer
 
         // A base controller may carry the attribute for everything that derives from it.
         INamedTypeSymbol? baseType = methodSymbol.ContainingType?.BaseType;
+
         while (baseType != null)
         {
             if (HasDecision(baseType.GetAttributes(), extra) == true)
@@ -148,6 +149,7 @@ public sealed class ExplicitAuthorizationDecisionAnalyzer : DiagnosticAnalyzer
         // Only inside something that actually is a controller — a plain class with a
         // [Route]-looking attribute should not drag the rule in.
         INamedTypeSymbol? type = method.ContainingType;
+
         while (type != null)
         {
             if (type.Name is "Controller" or "ControllerBase")

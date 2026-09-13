@@ -60,10 +60,10 @@ public sealed class SummaryRequiredWithParamDocsAnalyzer : DiagnosticAnalyzer
     {
         SyntaxNode root = context.Tree.GetRoot(context.CancellationToken);
 
-        // Sviten måste scopas per token, inte över hela trivia-strömmen. Tokens
-        // ingår inte i DescendantTrivia(), så en global genomgång skulle slå ihop
-        // typens doc-kommentar med medlemmens — och typens <summary> skulle då
-        // felaktigt räknas som medlemmens.
+        // The run has to be scoped per token, not across the whole trivia stream. Tokens
+        // are not part of DescendantTrivia(), so a global pass would merge the type's doc
+        // comment with the member's — and the type's <summary> would then wrongly be
+        // credited to the member.
         List<SyntaxTrivia> run = new List<SyntaxTrivia>();
         foreach (SyntaxToken token in root.DescendantTokens())
         {
@@ -76,7 +76,7 @@ public sealed class SummaryRequiredWithParamDocsAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                // Blanksteg och radbrytningar bryter inte upp en svit av /// -rader.
+                // Whitespace and line breaks do not break up a run of /// lines.
                 if (trivia.IsKind(SyntaxKind.WhitespaceTrivia) == true
                     || trivia.IsKind(SyntaxKind.EndOfLineTrivia) == true)
                 {

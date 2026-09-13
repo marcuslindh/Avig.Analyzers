@@ -35,6 +35,7 @@ public static class CSharpAnalyzerVerifier<TAnalyzer>
     public static async Task VerifyAsync(string source, params DiagnosticResult[] expected)
     {
         Test test = new() { TestCode = source };
+
         test.ExpectedDiagnostics.AddRange(expected);
 
         await test.RunAsync(CancellationToken.None);
