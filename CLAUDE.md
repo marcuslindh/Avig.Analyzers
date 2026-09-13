@@ -70,6 +70,14 @@ for "not applicable", not for "an error occurred". That follows the README's own
 turn down the rule rather than write the same suppression twelve times. If AVIG0007 is ever
 narrowed to externally visible members, delete that line and let it run.
 
+**Releases go out from `.github/workflows/publish.yml` when a `v*` tag is pushed,** through
+NuGet Trusted Publishing — no API key anywhere. Two things about that file are load-bearing.
+Its **file name** is part of the policy registered on nuget.org, so renaming it silently breaks
+publishing until the policy is changed to match. And the `NuGet/login` step has to stay
+**last**, immediately before the push: the key it returns is valid for one hour, and a job that
+requests it early can find it expired by the time it pushes. The job also refuses to publish
+when the tag and `<Version>` in the csproj disagree.
+
 **Never package into `lib/`.** `IncludeBuildOutput=false` plus the `PackAnalyzerAssembly`
 target is what makes this package an analyzer rather than an ordinary library. `publish.ps1`
 checks for it and aborts — that check must not be removed.
@@ -83,4 +91,7 @@ dotnet test Avig.Analyzers.slnx -c Release
 ./publish.ps1 -NoBump            # the same without a version bump
 ```
 
-Publishing to nuget.org is manual and never happens from the script.
+The script never pushes, and that has not changed. What publishes is the tag: commit the
+version and the release-tracking move, then `git tag vX.Y.Z` and push it. The workflow runs
+`publish.ps1 -NoBump` on a windows-latest runner - the script uses Windows path separators, and
+the repository enforces CRLF - and pushes the nupkg it produced.

@@ -948,8 +948,15 @@ dotnet test Avig.Analyzers.slnx -c Release
 ./publish.ps1 -NoBump            # the same without a version bump
 ```
 
-`publish.ps1` never pushes on its own. That is deliberate — publishing to nuget.org is a manual
-step, and the API key must never end up in the repository.
+`publish.ps1` never pushes. Releases go out through GitHub Actions: pushing a `v*` tag runs
+`.github/workflows/publish.yml`, which runs that same script and then publishes through NuGet
+Trusted Publishing. GitHub mints a short-lived OIDC token, nuget.org validates it against a
+policy naming this repository and the workflow file, and hands back a key valid for one hour.
+No API key exists in the repository, in GitHub secrets, or on anyone's machine.
+
+A release is therefore: set `<Version>`, move the new rules from `AnalyzerReleases.Unshipped.md`
+into `Shipped.md` under that version, commit, tag `vX.Y.Z`, push the tag. The workflow refuses
+to publish if the tag and `<Version>` disagree, so the two cannot drift apart unnoticed.
 
 ## License
 
