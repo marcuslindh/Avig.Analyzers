@@ -15,7 +15,8 @@ messages and script output alike.
 | `src/Avig.Analyzers/` | analyzers + code fixes, `netstandard2.0` |
 | `tests/Avig.Analyzers.Tests/` | xUnit + `Microsoft.CodeAnalysis.*.Testing`, `net10.0` |
 | `README.md` | both the repo readme and the `PackageReadmeFile` — one file, no drift |
-| `publish.ps1` | version, test, pack, verify package shape. Never pushes. |
+| `publish.ps1` | test, pack, verify package shape. Never pushes. Also what CI runs. |
+| `release.ps1` | bump, close release tracking, verify, commit, tag. The tag publishes. |
 
 ## Rules that apply when you change things here
 
@@ -91,7 +92,22 @@ dotnet test Avig.Analyzers.slnx -c Release
 ./publish.ps1 -NoBump            # the same without a version bump
 ```
 
-The script never pushes, and that has not changed. What publishes is the tag: commit the
-version and the release-tracking move, then `git tag vX.Y.Z` and push it. The workflow runs
-`publish.ps1 -NoBump` on a windows-latest runner - the script uses Windows path separators, and
-the repository enforces CRLF - and pushes the nupkg it produced.
+`publish.ps1` never pushes, and that has not changed. What publishes is the tag, and
+`release.ps1` is what produces one:
+
+```powershell
+./release.ps1 -Minor -DryRun     # report only
+./release.ps1 -Minor             # bump, verify, commit, tag; stops before the push
+./release.ps1 -Minor -Push       # the same, and push
+```
+
+It refuses to run on a dirty tree, off `main`, behind `origin`, or onto a tag that already
+exists locally or on the remote. It packs and shape-checks BEFORE tagging and restores the
+working tree if that fails, so an unbuildable release cannot become a tag.
+
+**Version bumping belongs to `release.ps1`.** `publish.ps1` can still bump a patch when run
+with no arguments, which is a leftover from before the tag-driven release and will rewrite
+`<Version>` under you. Use `-NoBump` unless you specifically want that.
+
+The workflow runs `publish.ps1 -NoBump` on a windows-latest runner - the script uses Windows
+path separators, and the repository enforces CRLF - and pushes the nupkg it produced.

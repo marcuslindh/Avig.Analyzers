@@ -944,19 +944,29 @@ namespace, AVIG0009 lost its Command, Query and Handler categories in favour of
 ```powershell
 dotnet build Avig.Analyzers.slnx -c Release
 dotnet test Avig.Analyzers.slnx -c Release
-./publish.ps1                    # bumps patch, tests, packs, verifies package shape
-./publish.ps1 -NoBump            # the same without a version bump
+./publish.ps1 -NoBump            # tests, packs, checks the package shape
 ```
 
-`publish.ps1` never pushes. Releases go out through GitHub Actions: pushing a `v*` tag runs
-`.github/workflows/publish.yml`, which runs that same script and then publishes through NuGet
-Trusted Publishing. GitHub mints a short-lived OIDC token, nuget.org validates it against a
-policy naming this repository and the workflow file, and hands back a key valid for one hour.
-No API key exists in the repository, in GitHub secrets, or on anyone's machine.
+Releasing is one command:
 
-A release is therefore: set `<Version>`, move the new rules from `AnalyzerReleases.Unshipped.md`
-into `Shipped.md` under that version, commit, tag `vX.Y.Z`, push the tag. The workflow refuses
-to publish if the tag and `<Version>` disagree, so the two cannot drift apart unnoticed.
+```powershell
+./release.ps1 -Minor -DryRun     # what would happen
+./release.ps1 -Minor             # bump, verify, commit, tag - stops before the push
+./release.ps1 -Minor -Push       # the same, and push, which starts the publish
+```
+
+`release.ps1` bumps `<Version>`, moves whatever sits in `AnalyzerReleases.Unshipped.md` into
+`Shipped.md` under the new version, packs and shape-checks the result, and only then commits
+and tags. A release that cannot be built never becomes a tag; if the verification fails the
+working tree is put back as it was. Without `-Push` nothing has left the machine yet, and the
+script prints both the command to publish and the one to undo.
+
+**The tag is what publishes.** Pushing `vX.Y.Z` runs `.github/workflows/publish.yml`, which
+builds the package again on a runner and pushes it through NuGet Trusted Publishing: GitHub
+mints a short-lived OIDC token, nuget.org validates it against a policy naming this repository
+and that workflow file, and hands back a key valid for one hour. No API key exists in the
+repository, in GitHub secrets, or on anyone's machine. The workflow refuses to publish when the
+tag and `<Version>` disagree, so the two cannot drift apart unnoticed.
 
 ## License
 
