@@ -15,11 +15,17 @@
     The package is packed and shape-checked BEFORE the tag is created, so a release that cannot
     be built never becomes a tag. If that verification fails, the working tree is restored.
 
-.PARAMETER Patch
-    Bump the third number. The default when no bump is named.
+    Versions carry at ten instead of running on. A bare run bumps the minor number, so 1.1.0
+    becomes 1.2.0 and 1.9.0 becomes 1.10.0 - but 1.10.0 becomes 2.0.0, because ten is the last
+    value a segment takes rather than the first it refuses. Patch carries the same way, into
+    minor, which can carry on into major: 1.10.10 bumps to 2.0.0.
 
 .PARAMETER Minor
-    Bump the second number and reset the third. What new rules call for.
+    Bump the second number and reset the third. The default when no bump is named, since a
+    release of this package is usually new rules.
+
+.PARAMETER Patch
+    Bump the third number. For a release that adds no rules.
 
 .PARAMETER Major
     Bump the first number and reset the rest.
@@ -37,12 +43,16 @@
     The branch a release may be cut from. Defaults to main.
 
 .EXAMPLE
-    ./release.ps1 -Minor
-    Six new rules went in: 1.1.0 becomes 1.2.0, verified, committed and tagged locally.
+    ./release.ps1
+    New rules went in: 1.1.0 becomes 1.2.0, verified, committed and tagged locally.
 
 .EXAMPLE
     ./release.ps1 -Patch -Push
     A documentation fix goes out without a second command.
+
+.EXAMPLE
+    ./release.ps1 -DryRun
+    Says which version a bare run would produce, and changes nothing.
 #>
 param(
     [switch]$Patch,
@@ -56,6 +66,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Ten is the last value a version segment takes, not the first it refuses: 1.9.0 bumps to
+# 1.10.0, and 1.10.0 carries into 2.0.0. Change this one number to change the whole scheme.
+$SegmentCeiling = 10
+
 $root      = $PSScriptRoot
 $project   = Join-Path $root "src\Avig.Analyzers\Avig.Analyzers.csproj"
 $shipped   = Join-Path $root "src\Avig.Analyzers\AnalyzerReleases.Shipped.md"
@@ -65,6 +79,27 @@ $publish   = Join-Path $root "publish.ps1"
 function Fail([string]$Message) {
     Write-Host "      $Message" -ForegroundColor Red
     exit 1
+}
+
+function Step-Version([int]$MajorPart, [int]$MinorPart, [int]$PatchPart, [string]$Part) {
+    switch ($Part) {
+        "major" { $MajorPart++; $MinorPart = 0; $PatchPart = 0 }
+        "minor" { $MinorPart++; $PatchPart = 0 }
+        default { $PatchPart++ }
+    }
+
+    # Carried in order, so a patch bump can travel all the way: 1.10.10 becomes 2.0.0.
+    if ($PatchPart -gt $SegmentCeiling) {
+        $PatchPart = 0
+        $MinorPart++
+    }
+
+    if ($MinorPart -gt $SegmentCeiling) {
+        $MinorPart = 0
+        $MajorPart++
+    }
+
+    return "$MajorPart.$MinorPart.$PatchPart"
 }
 
 function Save-Text([string]$Path, [string]$Text) {
@@ -127,6 +162,7 @@ if ($Version) {
     }
 
     $next = $Version
+    $part = "explicit"
 } else {
     $core = ($current -split '-')[0]
     $parts = $core.Split('.')
@@ -134,13 +170,9 @@ if ($Version) {
         Fail "Cannot bump '$current' - expected three numbers."
     }
 
-    if ($Major) {
-        $next = "$([int]$parts[0] + 1).0.0"
-    } elseif ($Minor) {
-        $next = "$($parts[0]).$([int]$parts[1] + 1).0"
-    } else {
-        $next = "$($parts[0]).$($parts[1]).$([int]$parts[2] + 1)"
-    }
+    # Minor by default: a release of this package is usually new rules.
+    $part = if ($Major) { "major" } elseif ($Patch) { "patch" } else { "minor" }
+    $next = Step-Version ([int]$parts[0]) ([int]$parts[1]) ([int]$parts[2]) $part
 }
 
 if ($next -eq $current) {
@@ -163,7 +195,14 @@ if ((git -C $root ls-remote --tags origin "refs/tags/$tag")) {
     Fail "Tag $tag already exists on origin. A published version cannot be replaced."
 }
 
-Write-Host "      $current -> $next   (tag $tag)" -ForegroundColor Green
+$carried = ""
+if ($part -ne "explicit" -and $part -ne "major" -and $nextCore.Major -gt $currentCore.Major) {
+    $carried = "   carried into a new major"
+} elseif ($part -eq "patch" -and $nextCore.Minor -gt $currentCore.Minor) {
+    $carried = "   carried into a new minor"
+}
+
+Write-Host "      $current -> $next   (tag $tag)$carried" -ForegroundColor Green
 
 # --- [3/6] Close the release-tracking entry ---
 # A rule left in Unshipped ships in the package while the tracking file says it was never

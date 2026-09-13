@@ -96,10 +96,15 @@ dotnet test Avig.Analyzers.slnx -c Release
 `release.ps1` is what produces one:
 
 ```powershell
-./release.ps1 -Minor -DryRun     # report only
-./release.ps1 -Minor             # bump, verify, commit, tag; stops before the push
-./release.ps1 -Minor -Push       # the same, and push
+./release.ps1 -DryRun            # report only
+./release.ps1                    # bump the minor, verify, commit, tag; stops before the push
+./release.ps1 -Push              # the same, and push
 ```
+
+**A bare run bumps the minor, and segments carry at ten rather than running on.** 1.9.0 goes to
+1.10.0, 1.10.0 goes to 2.0.0, and a patch bump carries into minor the same way. The scheme is
+one constant, `$SegmentCeiling`, at the top of the script. Twelve cases covering it are the
+reason to change that constant rather than the branching below it.
 
 It refuses to run on a dirty tree, off `main`, behind `origin`, or onto a tag that already
 exists locally or on the remote. It packs and shape-checks BEFORE tagging and restores the

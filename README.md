@@ -950,10 +950,16 @@ dotnet test Avig.Analyzers.slnx -c Release
 Releasing is one command:
 
 ```powershell
-./release.ps1 -Minor -DryRun     # what would happen
-./release.ps1 -Minor             # bump, verify, commit, tag - stops before the push
-./release.ps1 -Minor -Push       # the same, and push, which starts the publish
+./release.ps1 -DryRun            # what would happen
+./release.ps1                    # bump the minor, verify, commit, tag - stops before the push
+./release.ps1 -Push              # the same, and push, which starts the publish
+./release.ps1 -Patch             # for a release that adds no rules
 ```
+
+A bare run bumps the minor number, because a release of this package is usually new rules.
+Versions carry at ten rather than running on — 1.1.0 becomes 1.2.0 and 1.9.0 becomes 1.10.0,
+but 1.10.0 becomes 2.0.0, since ten is the last value a segment takes rather than the first it
+refuses. Patch carries the same way into minor, which can carry on into major.
 
 `release.ps1` bumps `<Version>`, moves whatever sits in `AnalyzerReleases.Unshipped.md` into
 `Shipped.md` under the new version, packs and shape-checks the result, and only then commits
