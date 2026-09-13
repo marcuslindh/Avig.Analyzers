@@ -19,3 +19,16 @@ AVIG0009 | Documentation | Info | RequiredXmlDocumentationAnalyzer
 AVIG0010 | Design | Warning | AuthMagicStringAnalyzer
 AVIG0011 | Documentation | Info | SummaryRequiredWithParamDocsAnalyzer
 AVIG0012 | Security | Info | ExplicitAuthorizationDecisionAnalyzer
+
+## Release 1.1.0
+
+### New Rules
+
+Rule ID | Category | Severity | Notes
+--------|----------|----------|-------
+AVIG0014 | Design | Warning | SyncOverAsyncAnalyzer
+AVIG0015 | Design | Warning | CancellationTokenForwardingAnalyzer
+AVIG0020 | Design | Info | LocalTimestampAnalyzer. Has a code fix.
+AVIG0021 | Design | Info | LogMessageTemplateAnalyzer
+AVIG0022 | Design | Info | MutableCollectionReturnAnalyzer. Has a code fix.
+AVIG0023 | Maintainability | Warning | TrackedTodoCommentAnalyzer

@@ -37,13 +37,13 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Avig.Analyzers</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Title>Avig.Analyzers</Title>
     <Description>Project-independent Roslyn rules for C#: formatting, naming, documentation requirements, async hygiene and auth hygiene. AVIG0001-AVIG0023, seven with a code fix. The rules report as suggestions until you raise the severity yourself in .editorconfig; four of the eighteen are warnings out of the box.</Description>
     <PackageTags>analyzers;roslyn;codequality;code-analysis;formatting;documentation;security;csharp</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>New rules since 1.0.0: AVIG0014 (blocking call on a task), AVIG0015 (awaited call drops a CancellationToken), AVIG0020 (local time instead of UTC), AVIG0021 (log message built instead of templated), AVIG0022 (public member hands out a mutable collection), AVIG0023 (TODO comment without a tracking reference). 1.0.0 - first release, twelve rules extracted from Medusa.Analyzers and de-Medusa-fied.</PackageReleaseNotes>
+    <PackageReleaseNotes>1.1.0 - six new rules: AVIG0014 (blocking call on a task), AVIG0015 (awaited call drops a CancellationToken), AVIG0020 (local time instead of UTC), AVIG0021 (log message built instead of templated), AVIG0022 (public member hands out a mutable collection) and AVIG0023 (TODO comment without a tracking reference). Two of them have a code fix; AVIG0014, AVIG0015 and AVIG0023 are warnings out of the box, the rest suggestions. 1.0.0 - twelve rules extracted from Medusa.Analyzers and de-Medusa-fied.</PackageReleaseNotes>
 
     <!--
       IncludeBuildOutput=false is what decides whether the package works at all: an
