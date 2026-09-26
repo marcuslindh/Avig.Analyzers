@@ -1,5 +1,8 @@
 # Avig.Analyzers
 
+Knowledge-projekt: aviganalyzers
+Dokumentation, beslut och agentlogg för projektet finns i Knowledge — se ~/.claude/CLAUDE.md.
+
 Public NuGet package with eighteen project-independent Roslyn rules in the range
 AVIG0001–AVIG0023. The first twelve were extracted from `Medusa.Analyzers` (the Medusa
 repository) — the ones that do not require Medusa's own types. AVIG0014, AVIG0015 and
