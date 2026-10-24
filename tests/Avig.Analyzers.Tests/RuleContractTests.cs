@@ -35,7 +35,7 @@ public class RuleContractTests
         [
             "AVIG0001", "AVIG0002", "AVIG0003", "AVIG0004", "AVIG0005", "AVIG0006",
             "AVIG0007", "AVIG0008", "AVIG0009", "AVIG0010", "AVIG0011", "AVIG0012",
-            "AVIG0014", "AVIG0015", "AVIG0020", "AVIG0021", "AVIG0022", "AVIG0023",
+            "AVIG0014", "AVIG0015", "AVIG0020", "AVIG0021", "AVIG0022", "AVIG0023", "AVIG0024",
         ];
 
         Assert.Equal(expected, Descriptors.Select(descriptor => descriptor.Id).OrderBy(id => id, StringComparer.Ordinal));

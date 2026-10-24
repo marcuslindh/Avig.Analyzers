@@ -51,6 +51,7 @@ dotnet_diagnostic.AVIG0020.severity = error
 dotnet_diagnostic.AVIG0021.severity = error
 dotnet_diagnostic.AVIG0022.severity = error
 dotnet_diagnostic.AVIG0023.severity = error
+dotnet_diagnostic.AVIG0024.severity = error
 
 [tests/**/*.cs]
 # Test code deliberately contains badly formatted code as string literals.
