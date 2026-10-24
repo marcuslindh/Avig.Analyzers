@@ -37,7 +37,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageId>Avig.Analyzers</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Title>Avig.Analyzers</Title>
     <Description>Project-independent Roslyn rules for C#: formatting, naming, documentation requirements, readability, async hygiene and auth hygiene. AVIG0001-AVIG0024, eight with a code fix. The rules report as suggestions until you raise the severity yourself in .editorconfig; four of the nineteen are warnings out of the box.</Description>
     <PackageTags>analyzers;roslyn;codequality;code-analysis;formatting;documentation;security;csharp</PackageTags>
