@@ -1,7 +1,8 @@
 # Avig.Analyzers
 
-Eighteen Roslyn rules that work in any C# project — formatting, naming, documentation
-requirements, async hygiene and auth hygiene. AVIG0001–AVIG0023, seven with a code fix.
+Nineteen Roslyn rules that work in any C# project — formatting, naming, documentation
+requirements, readability, async hygiene and auth hygiene. AVIG0001–AVIG0024, eight with a
+code fix.
 
 ## Why this exists
 
@@ -37,7 +38,7 @@ to whoever references your package.
 
 ## The rules stay quiet until you say otherwise
 
-Thirteen of the eighteen rules default to `suggestion`, and AVIG0006 is disabled entirely.
+Fourteen of the nineteen rules default to `suggestion`, and AVIG0006 is disabled entirely.
 A fresh install cannot break your build — not even with `TreatWarningsAsErrors`.
 
 Four rules are `warning` out of the box: AVIG0010, AVIG0014, AVIG0015 and AVIG0023. A rule
@@ -108,6 +109,9 @@ dotnet_diagnostic.AVIG0012.severity = error
 
 # Maintainability
 dotnet_diagnostic.AVIG0023.severity = error
+
+# Readability
+dotnet_diagnostic.AVIG0024.severity = error
 ```
 
 AVIG0006 belongs in that list only if the repository is genuinely CRLF — check
@@ -130,7 +134,7 @@ deliberately rather than as a side effect.
 
 ### Getting there on an existing codebase
 
-Do not flip all seventeen to error on a repository with history. You get thousands of errors,
+Do not flip all nineteen to error on a repository with history. You get thousands of errors,
 you do not read them, and you turn the package off. In this order instead:
 
 1. **Run the formatting family through `dotnet format` in its own commit**, with the rules
@@ -193,12 +197,14 @@ that one rule does not belong in this codebase. Turn down the rule, not the set.
 | [AVIG0021](#avig0021) | Design | suggestion | | Log message built instead of templated |
 | [AVIG0022](#avig0022) | Design | suggestion | ✔ | Public member hands out a mutable collection |
 | [AVIG0023](#avig0023) | Maintainability | **warning** | | TODO comment without a tracking reference |
+| [AVIG0024](#avig0024) | Readability | suggestion | ✔ | Inline if (`?:`) instead of an if statement |
 
 The numbering has gaps. AVIG0013 and AVIG0016–AVIG0019 are reserved for rules that were
 proposed but not built; a diagnostic id is permanent, so they are not reused.
 
-Seven rules have code fixes. The formatting family can be applied in bulk with `dotnet format`;
-AVIG0020 and AVIG0022 change signatures and behaviour, so they want a human looking at each one.
+Eight rules have code fixes. The formatting family can be applied in bulk with `dotnet format`;
+AVIG0020 and AVIG0022 change signatures and behaviour, and AVIG0024 rewrites control flow, so they
+want a human looking at each one.
 [Recommended setup](#recommended-setup) has the order to adopt them in.
 
 ---
@@ -895,6 +901,108 @@ parse falls back to the built-in one instead of taking the build down with an an
 
 ---
 
+## AVIG0024
+
+**Inline if instead of an if statement**
+
+```csharp
+// ⚠ AVIG0024
+return member ? "Member" : "Guest";
+var rate = score > 90 ? 0.7m : score > 70 ? 0.8m : 1m;
+
+// ✔
+if (member)
+{
+    return "Member";
+}
+else
+{
+    return "Guest";
+}
+
+decimal rate;
+if (score > 90)
+{
+    rate = 0.7m;
+}
+else if (score > 70)
+{
+    rate = 0.8m;
+}
+else
+{
+    rate = 1m;
+}
+```
+
+A conditional expression is a branch written as if it were a value. That is what makes it
+short, and also what makes it cost more than it looks: neither arm can carry its own breakpoint,
+line coverage reports the line as covered when only one arm ever ran, a diff that changes one
+arm shows the whole line as changed, and a nested one has to be read right to left to find out
+which condition owns which value. An if statement says the same thing with the branch where a
+reader, a debugger and a coverage tool can all see it.
+
+This is the most opinionated rule in the package, and it is a `suggestion` like the rest. Turn
+it off if your team reads ternaries fluently — the argument for it is strongest where code is
+reviewed faster than it is written.
+
+Every `?:` reports, and a nested conditional reports once per level. Three places are exempt,
+because no statement can stand there at all: a `const` declaration, an attribute argument and a
+parameter default value. Field initializers, expression-bodied members and lambdas do report —
+the expression can move into a constructor, a block body or a block lambda. `?.` and `??` are
+different operators and never report.
+
+The code fix rewrites the conditional wherever it is the whole value of something that can take
+a statement instead:
+
+- a statement — `return c ? a : b;`, `yield return c ? a : b;`, `x = c ? a : b;` and
+  `T x = c ? a : b;` (`var` becomes the inferred type, since the declaration has to be split
+  from the assignment);
+- an expression body — a method, operator, local function, `get` accessor, property or indexer
+  written with `=>`, and a lambda — which becomes a block body that returns from each arm:
+
+```csharp
+// ⚠ AVIG0024
+public string Label => member ? "Member" : "Guest";
+values.Select(value => value < 0 ? 0 : value);
+
+// ✔ after the fix
+public string Label
+{
+    get
+    {
+        if (member)
+        {
+            return "Member";
+        }
+        else
+        {
+            return "Guest";
+        }
+    }
+}
+
+values.Select(value =>
+{
+    if (value < 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return value;
+    }
+});
+```
+
+A conditional in the false arm becomes an `else if`, and a `throw` arm becomes a `throw`
+statement. There is no fix inside an argument list or a field initializer, where moving the
+branch out means inventing a local or a method the author should name, nor when the assignment
+target has side effects (`items[next++] = …`), because the target would then be evaluated after
+the condition instead of before it.
+
+---
+
 ## Why netstandard2.0 and not net10.0
 
 The analyzer assembly targets `netstandard2.0`. That is not lagging behind.
@@ -931,7 +1039,7 @@ If you are migrating an `.editorconfig`, this is the mapping:
 | AVIG0011 | MEDUSA0026 |
 | AVIG0012 | MEDUSA0028 |
 
-AVIG0014, AVIG0015, AVIG0020–AVIG0022 and AVIG0023 have no Medusa counterpart — they were
+AVIG0014, AVIG0015 and AVIG0020–AVIG0024 have no Medusa counterpart — they were
 written here.
 
 Three things differ beyond the numbering: AVIG0007 no longer looks for a specific `Result`

@@ -3,10 +3,10 @@
 Knowledge-projekt: aviganalyzers
 Dokumentation, beslut och agentlogg för projektet finns i Knowledge — se ~/.claude/CLAUDE.md.
 
-Public NuGet package with eighteen project-independent Roslyn rules in the range
-AVIG0001–AVIG0023. The first twelve were extracted from `Medusa.Analyzers` (the Medusa
+Public NuGet package with nineteen project-independent Roslyn rules in the range
+AVIG0001–AVIG0024. The first twelve were extracted from `Medusa.Analyzers` (the Medusa
 repository) — the ones that do not require Medusa's own types. AVIG0014, AVIG0015 and
-AVIG0020–AVIG0023 were written here.
+AVIG0020–AVIG0024 were written here.
 
 Everything in this repository is written in English: documentation, comments, commit
 messages and script output alike.
@@ -32,7 +32,7 @@ thing.
 **New rules take the next free number and must be added to `AnalyzerReleases.Unshipped.md`,**
 otherwise RS2008 fails the build. Exception: AVIG0013 and AVIG0016–AVIG0019 are reserved for
 proposed but unbuilt rules and must not be reused — a diagnostic id is permanent. The next
-free number is therefore AVIG0024. `Category` and `Severity` in the table have to match the
+free number is therefore AVIG0025. `Category` and `Severity` in the table have to match the
 `DiagnosticDescriptor` exactly (RS2001/RS2002).
 
 **The default severity is `Info`, and AVIG0006 is `isEnabledByDefault: false`.** That is

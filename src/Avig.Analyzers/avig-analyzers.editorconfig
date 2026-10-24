@@ -1,6 +1,6 @@
 # Avig.Analyzers — a template to copy into your own .editorconfig.
 #
-# The package turns nothing on for you. Thirteen of the eighteen rules default to
+# The package turns nothing on for you. Fourteen of the nineteen rules default to
 # "suggestion" and AVIG0006 is disabled entirely, so a fresh install cannot break your
 # build. What should be a warning or an error is your decision.
 #
@@ -67,6 +67,12 @@ dotnet_diagnostic.AVIG0023.severity = warning      # TODO without a tracking ref
 # AVIG0021 recognises receivers whose type name contains Logger, plus Serilog's static Log.
 # Your own wrappers can be listed:
 #   dotnet_code_quality.AVIG0021.additional_logger_types = Telemetry,AuditTrail
+
+# --- Readability ---
+# The most opinionated rule in the set: every inline if (?:) outside a const, an attribute
+# argument or a parameter default. Has a code fix for return, yield return, assignment,
+# declaration, expression-bodied members and lambdas.
+dotnet_diagnostic.AVIG0024.severity = suggestion   # conditional expression instead of an if statement
 
 # --- Security ---
 # Role, scope and claim names as string literals. One of the four rules that is a warning
